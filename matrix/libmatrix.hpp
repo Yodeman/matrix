@@ -21,7 +21,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
 
 template<typename T>
 class Matrix{
-    public:
+	public:
 		using value_type = T;
 		using iterator = typename std::vector<T>::iterator;
 		using const_iterator = typename std::vector<T>::const_iterator;
@@ -80,7 +80,7 @@ class Matrix{
 		template<typename M>
 			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator-=(const M& x);
 		template<typename T1, typename T2>
-            friend Matrix<Common_type<T1,T2>> operator*(const Matrix<T1>&, const Matrix<T2>&);
+			friend Matrix<Common_type<T1,T2>> operator*(const Matrix<T1>&, const Matrix<T2>&);
 
 		size_t ndim() const { return ndims; }
 		std::pair<size_t, size_t> shape() const { return std::make_pair(rows, cols); }
@@ -100,7 +100,7 @@ class Matrix{
 		void scale_and_add(const size_t& p_row, const size_t& m_row, const double& multiplier);
 		Matrix<T> minor(const size_t& r, const size_t& c);
 
-    private:
+	private:
 		size_t ndims, rows, cols;
 		size_t offset=0;
 		std::pair<size_t, size_t> stride;
