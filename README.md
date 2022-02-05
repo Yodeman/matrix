@@ -55,7 +55,7 @@ int main()
 
 ```c++
 #include <iostream>
-#include "../matrix/matrix.hpp"
+#include "matrix/matrix.hpp"
 
 int main()
 {
