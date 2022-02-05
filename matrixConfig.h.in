@@ -1,0 +1,4 @@
+// the configured options and  settings for matrix
+#define matrix_VERSION_MAJOR @matrix_VERSION_MAJOR@
+#define matrix_VERSION_MINOR @matrix_VERSION_MINOR@
+#define matrix_VERSION_PATCH @matrix_VERSION_PATCH@
