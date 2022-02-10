@@ -463,7 +463,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
 	auto r = m.shape().first;
 	auto c = m.shape().second;
 	size_t rm=0, rn=0;
-	T largest = m.elems.at(std::distance(m.cbegin(), std::max_element(m.cbegin(), m.cend(), [](const T& a, const T& b){return (std::abs(a) < std::abs(b));})));
+	T largest = m.elems.at(std::distance(m.cbegin(), std::max_element(m.cbegin(), m.cend(), [](const T& a, const T& b){return (std::to_string(a).length() < std::to_string(b).length());})));
 	size_t width = std::to_string(largest).length() + 1;
 	os.precision(4);
     os << "{\n";
