@@ -48,7 +48,8 @@ template<typename T>
 template<typename T>
 T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
 {
-    assert(r <= (rows-1) && c <= (cols-1));
+    if((0 > r || r >= rows) || (0 > c || c >= cols))
+    	throw MatrixInvalidIndexing("Index out of range!!!");
     return elems[(offset + (stride.first*r) + (stride.second*c))];
     //return const_cast<T&>();
 }
@@ -56,48 +57,40 @@ T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
 template<typename T>
 Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 {
-	auto row_slice = ind[0];
-	auto col_slice = ind[1];
-	assert(row_slice.start()>= 0 && row_slice.size()>=0 && row_slice.stride()>0);
-	assert(col_slice.start()>= 0 && col_slice.size()>=0 && col_slice.stride()>0);
-	size_t rlength = static_cast<size_t>(ceil((row_slice.size() - row_slice.start()) / static_cast<double>(row_slice.stride())));
-	size_t clength = static_cast<size_t>(ceil((col_slice.size() - col_slice.start()) / static_cast<double>(col_slice.stride())));
+	auto row_start = ind[0].start();
+	auto row_stop = ind[0].size();
+	auto row_stride = ind[0].stride();
+	auto col_start = ind[1].start();
+	auto col_stop = ind[1].size();
+	auto col_stride = ind[1].stride();
+	size_t rlength = 0, clength = 0;
 
-	if ((rlength==0) && (clength==0)){
+	if (row_stop == -1)
+		row_stop = rows;
+	if (col_stop == -1)
+		col_stop = cols;
+
+	if (row_start < 0 || row_stop > rows || row_stride <= 0)
+		throw MatrixInvalidIndexing("Invalid row slice index!!!");
+	if (col_start < 0 || col_stop > cols || col_stride <= 0)
+		throw MatrixInvalidIndexing("Invalid column slice index!!!");
+
+	if (((row_stop - row_start) > 0) && ((col_stop - col_start) > 0)){
+		rlength = static_cast<size_t>(ceil((row_stop - row_start) / static_cast<double>(row_stride)));
+		clength = static_cast<size_t>(ceil((col_stop - col_start) / static_cast<double>(col_stride)));
+	}
+
+	if ((rlength==0) || (clength==0)){
 		Matrix<T> res(rlength, clength);
-		return std::move(res);
-	}
-	else if (clength==0) {
-		Matrix<T> res(rlength, cols);
-		/*
-		 * returns specified rows and all columns
-		for (auto i=0; i<rlength; ++i){
-			auto r = row_slice.start() + (i * row_slice.stride());
-			for (auto j=0; j<cols; ++j){
-				res(i,j) = this->operator()(r,j);
-			}
-		}*/
-		return std::move(res);
-	}
-	else if (rlength==0) {
-		Matrix<T> res(rows, clength);
-		/*
-		 * returns specified columns and all rows
-		for (auto i=0; i<rows; ++i){
-			for (auto j=0; j<cols; ++j){
-				auto c = col_slice.start() + (j * col_slice.stride());
-				res(i,j) = this->operator()(i,c);
-			}
-		}*/
 		return std::move(res);
 	}
 	// returns the specifed rows and cols
 	else{
 		Matrix<T> res(rlength, clength);
 		for(auto i=0; i<rlength; ++i){
-			auto r = row_slice.start() + (i * row_slice.stride());
+			auto r = row_start + (i * row_stride);
 			for (auto j=0; j<clength; ++j){
-				auto c = col_slice.start() + (j * col_slice.stride());
+				auto c = col_start + (j * col_stride);
 				res(i,j) = this->operator()(r,c);
 			}
 		}
