@@ -44,6 +44,15 @@ int main()
 
 	std::cout << m9({std::slice(2, 8, 1), std::slice(2, 8, 1)}) << std::endl;
 	std::cout << m10({std::slice(2, 8, 2), std::slice(2, 8, 2)}) << std::endl;
+	std::cout << m9({std::slice(2, -1, 1), std::slice(2, -1, 1)}) << std::endl;
+	std::cout << m10({std::slice(2, -1, 2), std::slice(2, -1, 1)}) << std::endl;
+	try{
+		std::cout << m9({std::slice(-1, 8, 1), std::slice(1, 8, 1)}) << std::endl;
+		std::cout << m9({std::slice(2, 8, 1), std::slice(2, 8, 0)}) << std::endl;
+	}
+	catch(std::exception& e){
+		std::cerr << e.what() << std::endl;
+	}
 
 	m.transpose_();
 	auto m11 = m7.transpose();
@@ -70,25 +79,17 @@ int main()
 	catch(std::exception& e){
 		std::cerr << e.what() << std::endl;
 	}	
-	//auto sm = Matrix<int>::rand(10, 10);
-	auto sm = Matrix<int>(
-			{
-			    {48, 48, 97, 1, 21, 71, 54, 43, 38, 57},
-				{31, 23, 39, 37, 15, 75, 10, 25, 31, 79},
-				{8, 91, 99, 99, 11, 19, 45, 2, 21, 94},
-				{96, 82, 30, 62, 6, 37, 84, 30, 52, 72},
-				{94, 77, 6, 37, 68, 95, 72, 33, 13, 30},
-				{8, 79, 79, 21, 42, 95, 98, 51, 67, 39},
-				{31, 81, 56, 35, 25, 63, 43, 36, 59, 99},
-				{56, 20, 41, 40, 69, 14, 40, 91, 78, 56},
-				{100, 79, 70, 75, 7, 23, 51, 68, 6, 12},
-				{86, 32, 61, 12, 29, 94, 28, 96, 10, 14}
-		}
-	);
+	auto sm = Matrix<int>::rand(10, 10);
+	auto sm1 = Matrix<double>::rand(10, 10);
 	std::cout << "sm:\n" << sm << std::endl;
 	std::cout << sm.determinant() << std::endl;
 	std::cout << "sm inverse\n" << sm.inverse() << std::endl;
 	std::cout << (sm.inverse()) * sm << std::endl;
+
+	std::cout << "sm1:\n" << sm1 << std::endl;
+	std::cout << sm1.determinant() << std::endl;
+	std::cout << "sm1 inverse\n" << sm1.inverse() << std::endl;
+	std::cout << (sm1.inverse()) * sm1 << std::endl;
 
 
     return 0;
