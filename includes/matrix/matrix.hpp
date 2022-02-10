@@ -38,6 +38,7 @@ Matrix<T>::Matrix(std::initializer_list<std::initializer_list<T>> v)
     ndims = ((rows>1) && (cols>1)) ? 2 : 1;
 }
 
+// construction of matrix from matrix of another type.
 template<typename T>
 	template<typename R>
 		Matrix<T>::Matrix(const Matrix<R>& m)
@@ -61,29 +62,36 @@ Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 	assert(col_slice.start()>= 0 && col_slice.size()>=0 && col_slice.stride()>0);
 	size_t rlength = static_cast<size_t>(ceil((row_slice.size() - row_slice.start()) / static_cast<double>(row_slice.stride())));
 	size_t clength = static_cast<size_t>(ceil((col_slice.size() - col_slice.start()) / static_cast<double>(col_slice.stride())));
-	if ((row_slice.size()==0) && (col_slice.size()==0)){
-		return *this;
+
+	if ((rlength==0) && (clength==0)){
+		Matrix<T> res(rlength, clength);
+		return std::move(res);
 	}
 	else if (clength==0) {
 		Matrix<T> res(rlength, cols);
+		/*
+		 * returns specified rows and all columns
 		for (auto i=0; i<rlength; ++i){
 			auto r = row_slice.start() + (i * row_slice.stride());
 			for (auto j=0; j<cols; ++j){
 				res(i,j) = this->operator()(r,j);
 			}
-		}
+		}*/
 		return std::move(res);
 	}
 	else if (rlength==0) {
 		Matrix<T> res(rows, clength);
+		/*
+		 * returns specified columns and all rows
 		for (auto i=0; i<rows; ++i){
 			for (auto j=0; j<cols; ++j){
 				auto c = col_slice.start() + (j * col_slice.stride());
 				res(i,j) = this->operator()(i,c);
 			}
-		}
+		}*/
 		return std::move(res);
 	}
+	// returns the specifed rows and cols
 	else{
 		Matrix<T> res(rlength, clength);
 		for(auto i=0; i<rlength; ++i){
@@ -280,6 +288,8 @@ Matrix<Common_type<T,T2>> operator*(const Matrix<T>& m1, const Matrix<T2>& m2)
 	return std::move(res);
 }
 
+// generates random matrix. The supported types includes
+// integers and doubles.
 template<typename T>
 Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 {
@@ -301,6 +311,7 @@ Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 	}
 }
 
+// generates a matrix whose elements are all 1
 template<typename T>
 Matrix<T> Matrix<T>::ones(const size_t& r, const size_t& c)
 {
@@ -323,6 +334,7 @@ Matrix<T> Matrix<T>::unit(const size_t& r, const size_t& c)
 	throw MatrixInvalidDiagonal("row != col; a unit matrix is diagonal");
 }
 
+// transpose the matrix inplace.
 template<typename T>
 void Matrix<T>::transpose_()
 {
@@ -330,6 +342,8 @@ void Matrix<T>::transpose_()
 	std::swap(rows, cols);
 }
 
+// returns a transposed matrix, with original matrix
+// unchanged.
 template<typename T>
 Matrix<T> Matrix<T>::transpose()
 {
@@ -353,10 +367,13 @@ void Matrix<T>::swap_row(const size_t& first, const size_t& second)
 		*iter = *j;
 }
 
+// reduces the lower triangular part of the matrix to zeros
+// using the guassian elimination with partial pivot method.
 template<typename T>
 short Matrix<T>::elim_with_partial_pivot()
 {
-	short sign = 1;
+	short sign = 1; // used to keep track of the sign of determinant
+					// as swapping a row affects the sign of the matrix's determinant.
 	for(size_t j=0; j<rows; ++j) {
 		size_t pivot_row = j;
 		// look for a suitable pivot
@@ -369,7 +386,7 @@ short Matrix<T>::elim_with_partial_pivot()
 			swap_row(j, pivot_row);
 			sign ^= -2;
 		}
-		// wlimination
+		// elimination
 		for(size_t i=j+1; i<rows; ++i) {
 			const double pivot = this->operator()(j,j);
 			if(pivot == 0) throw MatrixEliminationError("can't solve: pivot==0");
@@ -459,9 +476,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
     os << "{\n";
     for (auto i=m.cbegin(); i!=m.cend(); ++i){
 		if (rn==0) os << "    { ";
-		//for(auto j : m.row(i)){
 		os << std::right << std::setw(width) << ((std::abs(*i) > 1e-10) ? *i : 0) << " ";
-		//}
 		++rn;
 		if ((rn==c)) {
 			os << "}\n";
