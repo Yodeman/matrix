@@ -19,6 +19,9 @@ int main()
     auto m9 = Matrix<int>::rand(10, 10);
     auto m10 = Matrix<double>::rand(10,10);
     auto m13 = Matrix<int>::rand(1000, 3000);
+    Matrix<int> m20(m3);
+    Matrix<float> m21(m);
+    Matrix<double> m23(m13);
     
     std::cout << m << std::endl;
     std::cout << m2 << std::endl;
