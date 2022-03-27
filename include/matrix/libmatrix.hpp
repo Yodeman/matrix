@@ -1,5 +1,6 @@
-#ifndef _MATRIX
-#define _MATRIX
+#ifndef MY_MATRIX
+#define MY_MATRIX
+
 #include <initializer_list>
 #include <vector>
 #include <valarray>
@@ -107,4 +108,4 @@ class Matrix{
 		mutable std::vector<T> elems;
 };
 
-#endif // _MATRIX
+#endif // MY_MATRIX
