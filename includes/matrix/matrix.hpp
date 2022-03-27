@@ -143,6 +143,7 @@ template<arithmetic_type T>
 	auto j = m.cbegin();
 	while (j!=m.cend()){
 		f(*i, *j);
+		++i;
 		++j;
 	}
 	return *this;
