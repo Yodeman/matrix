@@ -295,14 +295,14 @@ Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	if(std::is_same<T,int>::value){
+	if(std::is_integral_v<T>){
 		std::uniform_int_distribution<> dis(1, 100);
 		Matrix<T> res(r, c);
 		for(auto& i : res)
 			i = dis(gen);
 		return std::move(res);
 	}
-	else if(std::is_same<T,double>::value){
+	else if(std::is_floating_point_v<T>){
 		std::uniform_real_distribution<> dis(0, 10);
 		Matrix<T> res(r, c);
 		for(auto& i : res)
