@@ -9,12 +9,12 @@
 #include "libmatrix.hpp"
 
 // constructors
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>::Matrix(std::vector<T>& v)
 	:rows{1}, cols{v.size()}, ndims{1}, elems{v}, stride{std::make_pair(0, 1)}
 {}
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>::Matrix(const size_t r, const size_t c)
 	:rows{r}, cols{c}, elems(r*c), stride{std::make_pair(cols, 1)}
 {
@@ -23,7 +23,7 @@ Matrix<T>::Matrix(const size_t r, const size_t c)
     ndims = (rows>1 && cols > 1) ? 2 : 1;
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>::Matrix(std::initializer_list<std::initializer_list<T>> v)
 {
     size_t sz = 0;
@@ -39,13 +39,13 @@ Matrix<T>::Matrix(std::initializer_list<std::initializer_list<T>> v)
 }
 
 // construction of matrix from matrix of another type.
-template<typename T>
-	template<typename R>
+template<arithmetic_type T>
+	template<arithmetic_type R>
 		Matrix<T>::Matrix(const Matrix<R>& m)
 			:ndims{m.ndim()}, rows{m.shape().first}, cols{m.shape().second}, offset{0}, stride{m.strides()}, elems(m.begin(), m.end()) {}
 
 // element access
-template<typename T>
+template<arithmetic_type T>
 T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
 {
     if((0 > r || r >= rows) || (0 > c || c >= cols))
@@ -54,7 +54,7 @@ T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
     //return const_cast<T&>();
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 {
 	auto row_start = ind[0].start();
@@ -98,7 +98,7 @@ Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 	}
 }
 
-template<typename T>
+template<arithmetic_type T>
 std::vector<T> Matrix<T>::row(const size_t& i) const
 {
 	std::vector<T> v(cols);
@@ -108,7 +108,7 @@ std::vector<T> Matrix<T>::row(const size_t& i) const
 	return std::move(v);
 }
 
-template<typename T>
+template<arithmetic_type T>
 std::vector<T> Matrix<T>::col(const size_t& i) const
 {
 	std::vector<T> v(rows);
@@ -119,7 +119,7 @@ std::vector<T> Matrix<T>::col(const size_t& i) const
 }
 
 // utilities
-template<typename T>
+template<arithmetic_type T>
     template<typename F>
 		Matrix<T>& Matrix<T>::apply(F f)
 {
@@ -128,7 +128,7 @@ template<typename T>
 	return *this;
 }
 
-template<typename T>
+template<arithmetic_type T>
     template<typename M, typename F>
 		typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type Matrix<T>::apply(const M& m, F f)
 {
@@ -139,34 +139,34 @@ template<typename T>
 	return *this;
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>& Matrix<T>::operator+=(const T& value)
 {
 	return apply([&](T& a){ a += value; });
 }
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>& Matrix<T>::operator-=(const T& value)
 {
 	return apply([&](T& a){ a -= value; });
 }
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>& Matrix<T>::operator*=(const T& value)
 {
 	return apply([&](T& a){ a *= value; });
 }
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>& Matrix<T>::operator/=(const T& value)
 {
 	if(value==0) throw MatrixZeroDivision("operator/: zero division!!!");
 	return apply([&](T& a){ a /= value; });
 }
-template<typename T>
+template<arithmetic_type T>
 Matrix<T>& Matrix<T>::operator%=(const T& value)
 {
 	return apply([&](T& a){ a %= value; });
 }
 
-template<typename T, typename R, typename RT=Common_type<T,R>>
+template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator+(Matrix<T>& m, const R& val)
 {
 	std::pair<size_t, size_t> m_shape = m.shape();
@@ -179,7 +179,7 @@ Matrix<RT> operator+(Matrix<T>& m, const R& val)
 	return std::move(res);
 }
 
-template<typename T, typename R, typename RT=Common_type<T,R>>
+template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator-(Matrix<T>& m, const R& val)
 {
 	std::pair<size_t, size_t> m_shape = m.shape();
@@ -192,7 +192,7 @@ Matrix<RT> operator-(Matrix<T>& m, const R& val)
 	return std::move(res);
 }
 
-template<typename T, typename R, typename RT=Common_type<T,R>>
+template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator*(Matrix<T>& m, const R& val)
 {
 	std::pair<size_t, size_t> m_shape = m.shape();
@@ -205,7 +205,7 @@ Matrix<RT> operator*(Matrix<T>& m, const R& val)
 	return std::move(res);
 }
 
-template<typename T, typename R, typename RT=Common_type<T,R>>
+template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator/(Matrix<T>& m, const R& val)
 {
 	if(val==0) throw MatrixZeroDivision("operator/: zero division!!!");
@@ -219,7 +219,7 @@ Matrix<RT> operator/(Matrix<T>& m, const R& val)
 	return std::move(res);
 }
 
-template<typename T, typename R, typename RT=Common_type<T,R>>
+template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator%(Matrix<T>& m, const R& val)
 {
 	std::pair<size_t, size_t> m_shape = m.shape();
@@ -232,7 +232,7 @@ Matrix<RT> operator%(Matrix<T>& m, const R& val)
 	return std::move(res);
 }
 
-template<typename T>
+template<arithmetic_type T>
     template<typename M>
 		typename std::enable_if<std::is_same<Matrix<T>,M>::value, Matrix<T>&>::type Matrix<T>::operator+=(const M& m)
 {
@@ -240,7 +240,7 @@ template<typename T>
 	return apply(m, [](T& a, const Value_type<M>& b){ a += b; });
 }
 
-template<typename T>
+template<arithmetic_type T>
     template<typename M>
 		typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type Matrix<T>::operator-=(const M& m)
 {
@@ -248,7 +248,7 @@ template<typename T>
 	return apply(m, [](T& a, const Value_type<M>& b){ a -= b; });
 }
 
-template<typename T, typename T2, typename RT = Common_type<T,T2>>
+template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
     Matrix<RT> operator+(const Matrix<T>& a, const Matrix<T2>& b)
 {
 	Matrix<RT> res = a;
@@ -256,7 +256,7 @@ template<typename T, typename T2, typename RT = Common_type<T,T2>>
 	return std::move(res);
 }
 
-template<typename T, typename T2, typename RT = Common_type<T,T2>>
+template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
     Matrix<RT> operator-(const Matrix<T>& a, const Matrix<T2>& b)
 {
 	Matrix<RT> res = a;
@@ -264,7 +264,7 @@ template<typename T, typename T2, typename RT = Common_type<T,T2>>
 	return std::move(res);
 }
 
-template<typename T, typename T2>
+template<arithmetic_type T, arithmetic_type T2>
 Matrix<Common_type<T,T2>> operator*(const Matrix<T>& m1, const Matrix<T2>& m2)
 {
 	assert(m1.cols == m2.rows);
@@ -283,7 +283,7 @@ Matrix<Common_type<T,T2>> operator*(const Matrix<T>& m1, const Matrix<T2>& m2)
 
 // generates random matrix. The supported types includes
 // integers and doubles.
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 {
 	std::random_device rd;
@@ -305,7 +305,7 @@ Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 }
 
 // generates a matrix whose elements are all 1
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::ones(const size_t& r, const size_t& c)
 {
 	Matrix<T> res(r, c);
@@ -314,7 +314,7 @@ Matrix<T> Matrix<T>::ones(const size_t& r, const size_t& c)
 	return std::move(res);
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::unit(const size_t& r, const size_t& c)
 {
 	if (r==c){
@@ -328,7 +328,7 @@ Matrix<T> Matrix<T>::unit(const size_t& r, const size_t& c)
 }
 
 // transpose the matrix inplace.
-template<typename T>
+template<arithmetic_type T>
 void Matrix<T>::transpose_()
 {
 	std::swap(stride.first, stride.second);
@@ -337,7 +337,7 @@ void Matrix<T>::transpose_()
 
 // returns a transposed matrix, with original matrix
 // unchanged.
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::transpose()
 {
 	Matrix<T> res(*this);
@@ -345,7 +345,7 @@ Matrix<T> Matrix<T>::transpose()
 	return std::move(res);
 }
 
-template<typename T>
+template<arithmetic_type T>
 void Matrix<T>::swap_row(const size_t& first, const size_t& second)
 {
 	auto row_1 = row(first);
@@ -362,7 +362,7 @@ void Matrix<T>::swap_row(const size_t& first, const size_t& second)
 
 // reduces the lower triangular part of the matrix to zeros
 // using the guassian elimination with partial pivot method.
-template<typename T>
+template<arithmetic_type T>
 short Matrix<T>::elim_with_partial_pivot()
 {
 	short sign = 1; // used to keep track of the sign of determinant
@@ -390,7 +390,7 @@ short Matrix<T>::elim_with_partial_pivot()
 	return sign;
 }
 
-template<typename T>
+template<arithmetic_type T>
 void Matrix<T>::scale_and_add(const size_t& p_row, const size_t& m_row, const double& multiplier)
 {
 	auto pivot_row = row(p_row);
@@ -402,7 +402,7 @@ void Matrix<T>::scale_and_add(const size_t& p_row, const size_t& m_row, const do
 	}
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<T> Matrix<T>::minor(const size_t& r, const size_t& c)
 {
 	Matrix<T> minor_r_c(rows-1, cols-1);
@@ -418,7 +418,7 @@ Matrix<T> Matrix<T>::minor(const size_t& r, const size_t& c)
 	return std::move(minor_r_c);
 }
 
-template<typename T>
+template<arithmetic_type T>
 Matrix<double> Matrix<T>::inverse()
 {
 	if(!is_square()) throw MatrixInverseError("Inverse of a non-square matrix!!!");
@@ -445,7 +445,7 @@ Matrix<double> Matrix<T>::inverse()
 	return std::move(inv);
 }
 
-template<typename T>
+template<arithmetic_type T>
 double Matrix<T>::determinant()
 {
 	if(!is_square()) throw MatrixDeterminantError("Determinant of non-square matrix!!!");
@@ -457,7 +457,7 @@ double Matrix<T>::determinant()
 	return det*sign;
 }
 
-template<typename T>
+template<arithmetic_type T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
 {
 	auto r = m.shape().first;

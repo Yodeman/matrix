@@ -15,12 +15,15 @@ template<typename... T>
 using Common_type = typename std::common_type<T...>::type;
 
 template<typename T>
+concept arithmetic_type = std::is_arithmetic_v<T>;
+
+template<arithmetic_type T>
 class Matrix;
 
-template<typename T>
+template<arithmetic_type T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
 
-template<typename T>
+template<arithmetic_type T>
 class Matrix{
 	public:
 		using value_type = T;
