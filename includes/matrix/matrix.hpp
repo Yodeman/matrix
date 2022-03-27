@@ -42,16 +42,23 @@ Matrix<T>::Matrix(std::initializer_list<std::initializer_list<T>> v)
 template<arithmetic_type T>
 	template<arithmetic_type R>
 		Matrix<T>::Matrix(const Matrix<R>& m)
-			:ndims{m.ndim()}, rows{m.shape().first}, cols{m.shape().second}, offset{0}, stride{m.strides()}, elems(m.begin(), m.end()) {}
+			:ndims{m.ndim()}, rows{m.shape().first}, cols{m.shape().second}, offset{0}, stride{m.strides()}, elems(m.cbegin(), m.cend()) {}
 
 // element access
 template<arithmetic_type T>
-T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
+T& Matrix<T>::operator()(const size_t& r, const size_t& c)
 {
     if((0 > r || r >= rows) || (0 > c || c >= cols))
     	throw MatrixInvalidIndexing("Index out of range!!!");
     return elems[(offset + (stride.first*r) + (stride.second*c))];
-    //return const_cast<T&>();
+}
+
+template<arithmetic_type T>
+const T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
+{
+    if((0 > r || r >= rows) || (0 > c || c >= cols))
+    	throw MatrixInvalidIndexing("Index out of range!!!");
+    return elems[(offset + (stride.first*r) + (stride.second*c))];
 }
 
 template<arithmetic_type T>
@@ -236,7 +243,7 @@ template<arithmetic_type T>
     template<typename M>
 		typename std::enable_if<std::is_same<Matrix<T>,M>::value, Matrix<T>&>::type Matrix<T>::operator+=(const M& m)
 {
-	assert(m.rows==rows && m.cols==cols);
+	assert(shape().first==m.shape().first && shape().second==m.shape().second);
 	return apply(m, [](T& a, const Value_type<M>& b){ a += b; });
 }
 
@@ -244,7 +251,7 @@ template<arithmetic_type T>
     template<typename M>
 		typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type Matrix<T>::operator-=(const M& m)
 {
-	assert(m.rows==rows && m.cols==cols);
+	assert(shape().first==m.shape().first && shape().second==m.shape().second);
 	return apply(m, [](T& a, const Value_type<M>& b){ a -= b; });
 }
 
