@@ -33,7 +33,7 @@ class Matrix{
 		// Constructors
 		Matrix<T>() = delete;
 
-		template<typename R>
+		template<arithmetic_type R>
 		Matrix<T>(const Matrix<R>&);
 
 		Matrix<T>(Matrix<T>&&) = default;
@@ -47,7 +47,8 @@ class Matrix{
 		~Matrix() = default;
 
 		// Element access
-		T& operator() (const size_t& r, const size_t& c) const;
+		T& operator() (const size_t&, const size_t&);
+		const T& operator()(const size_t&, const size_t&) const;
 		Matrix<T> operator()(const std::array<std::slice, 2>&) const;
 		Matrix<T> operator[](const size_t& i) const { return std::move(Matrix<T>(row(i))); }
 		
@@ -56,8 +57,8 @@ class Matrix{
 		static Matrix<T> unit(const size_t& r, const size_t& c);
 		static Matrix<T> ones(const size_t& r, const size_t& c);
 
-		iterator begin() const { return elems.begin(); }
-		iterator end() const { return elems.end(); }
+		iterator begin() { return elems.begin(); }
+		iterator end() { return elems.end(); }
 		const_iterator cbegin() const { return elems.cbegin(); }
 		const_iterator cend() const { return elems.cend(); }
 
@@ -80,10 +81,10 @@ class Matrix{
 		Matrix<T>& operator%=(const T& value);
 
 		template<typename M>
-			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator+=(const M& x);
+			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator+=(const M&);
 		template<typename M>
-			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator-=(const M& x);
-		template<typename T1, typename T2>
+			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator-=(const M&);
+		template<arithmetic_type T1, arithmetic_type T2>
 			friend Matrix<Common_type<T1,T2>> operator*(const Matrix<T1>&, const Matrix<T2>&);
 
 		size_t ndim() const { return ndims; }
@@ -108,7 +109,7 @@ class Matrix{
 		size_t ndims, rows, cols;
 		size_t offset=0;
 		std::pair<size_t, size_t> stride;
-		mutable std::vector<T> elems;
+		std::vector<T> elems;
 };
 
 #endif // MY_MATRIX
