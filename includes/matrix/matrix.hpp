@@ -139,10 +139,12 @@ template<arithmetic_type T>
     template<typename M, typename F>
 		typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type Matrix<T>::apply(const M& m, F f)
 {
-	//for(auto i=begin(), j=m.begin(); i!=end(); ++i, ++j)
-	for(size_t i=0; i<rows; ++i)
-		for (size_t j=0; j<cols; ++j)
-			f(this->operator()(i,j), m(i,j));
+	auto i = begin();
+	auto j = m.cbegin();
+	while (j!=m.cend()){
+		f(*i, *j);
+		++j;
+	}
 	return *this;
 }
 
@@ -176,67 +178,37 @@ Matrix<T>& Matrix<T>::operator%=(const T& value)
 template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator+(Matrix<T>& m, const R& val)
 {
-	std::pair<size_t, size_t> m_shape = m.shape();
-	Matrix<RT> res(m_shape.first, m_shape.second);
-	for(size_t i=0; i<m_shape.first; ++i) {
-		for(size_t j=0; j<m_shape.second; ++j) {
-			res(i,j) = m(i,j) + val;
-		}
-	}
-	return std::move(res);
+	Matrix<RT> res(m);
+	return res.apply([&](RT& a){ a += val; });
 }
 
 template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator-(Matrix<T>& m, const R& val)
 {
-	std::pair<size_t, size_t> m_shape = m.shape();
-	Matrix<RT> res(m_shape.first, m_shape.second);
-	for(size_t i=0; i<m_shape.first; ++i) {
-		for(size_t j=0; j<m_shape.second; ++j) {
-			res(i,j) = m(i,j) - val;
-		}
-	}
-	return std::move(res);
+	Matrix<RT> res(m);
+	return res.apply([&](RT& a){ a -= val; });
 }
 
 template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator*(Matrix<T>& m, const R& val)
 {
-	std::pair<size_t, size_t> m_shape = m.shape();
-	Matrix<RT> res(m_shape.first, m_shape.second);
-	for(size_t i=0; i<m_shape.first; ++i) {
-		for(size_t j=0; j<m_shape.second; ++j) {
-			res(i,j) = m(i,j) * val;
-		}
-	}
-	return std::move(res);
+	Matrix<RT> res(m);
+	return res.apply([&](RT& a){ a *= val; });
 }
 
 template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator/(Matrix<T>& m, const R& val)
 {
 	if(val==0) throw MatrixZeroDivision("operator/: zero division!!!");
-	std::pair<size_t, size_t> m_shape = m.shape();
-	Matrix<RT> res(m_shape.first, m_shape.second);
-	for(size_t i=0; i<m_shape.first; ++i) {
-		for(size_t j=0; j<m_shape.second; ++j) {
-			res(i,j) = m(i,j) / val;
-		}
-	}
-	return std::move(res);
+	Matrix<RT> res(m);
+	return res.apply([&](RT& a){ a /= val; });
 }
 
 template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
 Matrix<RT> operator%(Matrix<T>& m, const R& val)
 {
-	std::pair<size_t, size_t> m_shape = m.shape();
-	Matrix<RT> res(m_shape.first, m_shape.second);
-	for(size_t i=0; i<m_shape.first; ++i) {
-		for(size_t j=0; j<m_shape.second; ++j) {
-			res(i,j) = m(i,j) % val;
-		}
-	}
-	return std::move(res);
+	Matrix<RT> res(m);
+	return res.apply([&](RT& a){ a %= val; });
 }
 
 template<arithmetic_type T>
