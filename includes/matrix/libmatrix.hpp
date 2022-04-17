@@ -36,10 +36,41 @@ class Matrix{
 		template<arithmetic_type R>
 		Matrix<T>(const Matrix<R>&);
 
-		Matrix<T>(Matrix<T>&&) = default;
-		Matrix<T>& operator=(Matrix<T>&&) = default;
-		Matrix<T>(const Matrix<T>&) = default;
-		Matrix<T>& operator=(const Matrix<T>&) = default;
+		Matrix<T>(Matrix<T>&& m)
+			: ndims{m.ndims}, rows{m.rows}, cols{m.cols}, offset{m.offset},
+			stride{m.stride}, elems(std::move(m.elems)) {}
+
+		Matrix<T>& operator=(Matrix<T>&& m) {
+			if (&m != this) {
+				assert(m.rows == rows);
+				assert(m.cols == cols);
+				offset = m.offset;
+				ndims = m.ndims;
+				rows = m.rows;
+				cols = m.cols;
+				stride = m.stride;
+				elems = std::move(m.elems);
+			}
+			return *this;
+		}
+
+		Matrix<T>(const Matrix<T>& m)
+			: ndims{m.ndims}, rows{m.rows}, cols{m.cols}, offset{m.offset},
+			stride{m.stride}, elems(m.cbegin(), m.cend()){}
+
+		Matrix<T>& operator=(const Matrix<T>& m) {
+			if (&m != this) {
+				assert(m.rows == rows);
+				assert(m.cols == cols);
+				offset = m.offset;
+				ndims = m.ndims;
+				rows = m.rows;
+				cols = m.cols;
+				stride = m.stride;
+				std::copy(m.cbegin(), m.cend(), elems.begin());
+			}
+			return *this;
+		}
 
 		explicit Matrix<T>(const size_t row, const size_t col);
 		Matrix<T>(std::initializer_list<std::initializer_list<T>> v);
