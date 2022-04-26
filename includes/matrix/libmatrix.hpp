@@ -50,8 +50,9 @@ class Matrix{
 				cols = m.cols;
 				stride = m.stride;
 				elems = std::move(m.elems);
+				return *this;
 			}
-			return *this;
+			throw std::runtime_error("Self assignment is not valid for move assignment.");
 		}
 
 		Matrix<T>(const Matrix<T>& m)
