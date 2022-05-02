@@ -89,7 +89,7 @@ Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 
 	if ((rlength==0) || (clength==0)){
 		Matrix<T> res(rlength, clength);
-		return std::move(res);
+		return res; //std::move(res);
 	}
 	// returns the specifed rows and cols
 	else{
@@ -101,7 +101,7 @@ Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
 				res(i,j) = this->operator()(r,c);
 			}
 		}
-		return std::move(res);
+		return res; //std::move(res);
 	}
 }
 
@@ -112,7 +112,7 @@ std::vector<T> Matrix<T>::row(const size_t& i) const
 	for (size_t j=0; j<cols; ++j){
 	    v[j] = this->operator()(i, j);
 	}
-	return std::move(v);
+	return v; //std::move(v);
 }
 
 template<arithmetic_type T>
@@ -122,7 +122,7 @@ std::vector<T> Matrix<T>::col(const size_t& i) const
 	for (size_t j=0; j<rows; ++j) {
 	    v[j] = this->operator()(j, i);
 	}
-	return std::move(v);
+	return v; //std::move(v);
 }
 
 // utilities
@@ -233,7 +233,7 @@ template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
 {
 	Matrix<RT> res = a;
 	res += b;
-	return std::move(res);
+	return res; //std::move(res);
 }
 
 template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
@@ -241,7 +241,7 @@ template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
 {
 	Matrix<RT> res = a;
 	res -= b;
-	return std::move(res);
+	return res; //std::move(res);
 }
 
 template<arithmetic_type T, arithmetic_type T2>
@@ -258,7 +258,7 @@ Matrix<Common_type<T,T2>> operator*(const Matrix<T>& m1, const Matrix<T2>& m2)
 			res(i,j) = std::inner_product(r1.begin(), r1.end(), c2.begin(), static_cast<Common_type<T, T2>>(0));
 		}
 	}
-	return std::move(res);
+	return res; //std::move(res);
 }
 
 // generates random matrix. The supported types includes
@@ -273,14 +273,14 @@ Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
 		Matrix<T> res(r, c);
 		for(auto& i : res)
 			i = dis(gen);
-		return std::move(res);
+		return res; //std::move(res);
 	}
 	else if(std::is_floating_point_v<T>){
 		std::uniform_real_distribution<> dis(0, 10);
 		Matrix<T> res(r, c);
 		for(auto& i : res)
 			i = dis(gen);
-		return std::move(res);
+		return res; //std::move(res);
 	}
 }
 
@@ -291,7 +291,7 @@ Matrix<T> Matrix<T>::ones(const size_t& r, const size_t& c)
 	Matrix<T> res(r, c);
 	for(auto& i : res)
 		i = 1;
-	return std::move(res);
+	return res; // std::move(res);
 }
 
 template<arithmetic_type T>
@@ -302,7 +302,7 @@ Matrix<T> Matrix<T>::unit(const size_t& r, const size_t& c)
 		for(auto i=0; i<r; ++i){
 			res(i,i) = 1;
 		}
-		return std::move(res);
+		return res; //std::move(res);
 	}
 	throw MatrixInvalidDiagonal("row != col; a unit matrix is diagonal");
 }
@@ -322,7 +322,7 @@ Matrix<T> Matrix<T>::transpose()
 {
 	Matrix<T> res(*this);
 	res.transpose_();
-	return std::move(res);
+	return res; //std::move(res);
 }
 
 template<arithmetic_type T>
@@ -395,7 +395,7 @@ Matrix<T> Matrix<T>::minor(const size_t& r, const size_t& c)
 		}
 		++m;
 	}
-	return std::move(minor_r_c);
+	return minor_r_c; //std::move(minor_r_c);
 }
 
 template<arithmetic_type T>
@@ -422,7 +422,7 @@ Matrix<double> Matrix<T>::inverse()
 		}
 	}
 	inv.transpose_();
-	return std::move(inv);
+	return inv; //std::move(inv);
 }
 
 template<arithmetic_type T>
