@@ -6,7 +6,7 @@
 #include <valarray>
 #include <array>
 #include <type_traits>
-#include "./matrixExceptions.hpp"
+#include <matrix/matrixExceptions.hpp>
 
 template<typename M>
 using Value_type = typename M::value_type;

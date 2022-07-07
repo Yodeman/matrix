@@ -6,7 +6,7 @@
 #include <random>
 #include <cmath>
 #include <string>
-#include "libmatrix.hpp"
+#include <matrix/libmatrix.hpp>
 
 // constructors
 template<arithmetic_type T>
