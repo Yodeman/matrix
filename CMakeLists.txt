@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 # add the matrix library
-include_directories(includes)
+include_directories(include)
 
 add_subdirectory(test)
 
