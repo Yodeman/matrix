@@ -1,147 +1,502 @@
-#ifndef MY_MATRIX
-#define MY_MATRIX
+#pragma once
 
-#include <initializer_list>
-#include <vector>
-#include <valarray>
-#include <array>
-#include <type_traits>
-#include <matrix/matrixExceptions.hpp>
+#include <iostream>
+#include <cassert>
+#include <numeric>
+#include <iomanip>
+#include <algorithm>
+#include <random>
+#include <cmath>
+#include <string>
 
-template<typename M>
-using Value_type = typename M::value_type;
+#include "matrix/libmatrix_decl.hpp"
 
-template<typename... T>
-using Common_type = typename std::common_type<T...>::type;
+namespace my_matrix {
+    // constructors
+    template<arithmetic_type T>
+    Matrix<T>::Matrix(std::vector<T>& v)
+        :ndims{1}, rows{1}, cols{v.size()}, stride{std::make_pair(0, 1)}, elems{v}
+    {}
 
-template<typename T>
-concept arithmetic_type = std::is_arithmetic_v<T>;
+    template<arithmetic_type T>
+    Matrix<T>::Matrix(const size_t r, const size_t c)
+        :rows{r}, cols{c}, stride{std::make_pair(cols, 1)}, elems(r*c)
+    {
+        assert(rows > 0); //, "Invalid row dimension!!!");
+        assert(cols > 0); //, "Invalid column dimension!!!");
+        ndims = (rows>1 && cols > 1) ? 2 : 1;
+    }
 
-template<arithmetic_type T>
-class Matrix;
+    template<arithmetic_type T>
+    Matrix<T>::Matrix(std::initializer_list<std::initializer_list<T>> v)
+    {
+        size_t sz = 0;
+        rows = v.size();
+        for(auto i = v.begin(); i!=v.end(); ++i){
+            if (i==v.begin()) sz = i->size();
+            assert(i->size() == sz);
+            elems.insert(elems.end(), i->begin(), i->end());
+        }
+        cols = sz;
+        stride = std::make_pair(cols, 1);
+        ndims = ((rows>1) && (cols>1)) ? 2 : 1;
+    }
 
-template<arithmetic_type T>
-std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
+    // construction of matrix from matrix of another type.
+    template<arithmetic_type T>
+        template<arithmetic_type R>
+            Matrix<T>::Matrix(const Matrix<R>& m)
+                :ndims{m.ndim()}, rows{m.shape().first}, cols{m.shape().second},
+                offset{0}, stride{m.strides()}, elems(m.cbegin(), m.cend()) {}
 
-template<arithmetic_type T>
-class Matrix{
-	public:
-		using value_type = T;
-		using iterator = typename std::vector<T>::iterator;
-		using const_iterator = typename std::vector<T>::const_iterator;
+    // element access
+    template<arithmetic_type T>
+    T& Matrix<T>::operator()(const size_t& r, const size_t& c)
+    {
+        if((0 > r || r >= rows) || (0 > c || c >= cols))
+            throw MatrixInvalidIndexing("Index out of range!!!");
+        return elems[(offset + (stride.first*r) + (stride.second*c))];
+    }
 
-		// Constructors
-		Matrix<T>() = delete;
+    template<arithmetic_type T>
+    const T& Matrix<T>::operator()(const size_t& r, const size_t& c) const
+    {
+        if((0 > r || r >= rows) || (0 > c || c >= cols))
+            throw MatrixInvalidIndexing("Index out of range!!!");
+        return elems[(offset + (stride.first*r) + (stride.second*c))];
+    }
 
-		template<arithmetic_type R>
-		Matrix<T>(const Matrix<R>&);
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::operator()(const std::array<std::slice, 2>& ind) const
+    {
+        auto row_start = ind[0].start();
+        auto row_stop = ind[0].size();
+        auto row_stride = ind[0].stride();
+        auto col_start = ind[1].start();
+        auto col_stop = ind[1].size();
+        auto col_stride = ind[1].stride();
+        size_t rlength = 0, clength = 0;
 
-		Matrix<T>(Matrix<T>&& m)
-			: ndims{m.ndims}, rows{m.rows}, cols{m.cols}, offset{m.offset},
-			stride{m.stride}, elems(std::move(m.elems)) {}
+        if (row_stop > rows)
+            row_stop = rows;
+        if (row_stride > rows)
+            row_stride = rows;
 
-		Matrix<T>& operator=(Matrix<T>&& m) {
-			if (&m != this) {
-				assert(m.rows == rows);
-				assert(m.cols == cols);
-				offset = m.offset;
-				ndims = m.ndims;
-				rows = m.rows;
-				cols = m.cols;
-				stride = m.stride;
-				elems = std::move(m.elems);
-				return *this;
-			}
-			throw std::runtime_error("Self assignment is not valid for move assignment.");
-		}
+        if (col_stop > cols)
+            col_stop = cols;
+        if (col_stride > cols)
+            col_stride = cols;
 
-		Matrix<T>(const Matrix<T>& m)
-			: ndims{m.ndims}, rows{m.rows}, cols{m.cols}, offset{m.offset},
-			stride{m.stride}, elems(m.cbegin(), m.cend()){}
+        if (row_stop < row_start || row_stride == 0)
+            throw MatrixInvalidIndexing("Invalid row slice index!!!");
+        if (col_stop < col_start || col_stride == 0)
+            throw MatrixInvalidIndexing("Invalid column slice index!!!");
 
-		Matrix<T>& operator=(const Matrix<T>& m) {
-			if (&m != this) {
-				assert(m.rows == rows);
-				assert(m.cols == cols);
-				offset = m.offset;
-				ndims = m.ndims;
-				rows = m.rows;
-				cols = m.cols;
-				stride = m.stride;
-				std::copy(m.cbegin(), m.cend(), elems.begin());
-			}
-			return *this;
-		}
+        if (((row_stop - row_start) > 0) && ((col_stop - col_start) > 0)){
+            rlength = static_cast<size_t>(ceil((row_stop - row_start) / \
+                        static_cast<double>(row_stride)));
+            clength = static_cast<size_t>(ceil((col_stop - col_start) / \
+                        static_cast<double>(col_stride)));
+        }
 
-		explicit Matrix<T>(const size_t row, const size_t col);
-		Matrix<T>(std::initializer_list<std::initializer_list<T>> v);
-		
-		~Matrix() = default;
+        if ((rlength==0) || (clength==0)){
+            Matrix<T> res(rlength, clength);
+            return res; //std::move(res);
+        }
+        // returns the specifed rows and cols
+        else{
+            Matrix<T> res(rlength, clength);
+            for(size_t i=0; i<rlength; ++i){
+                auto r = row_start + (i * row_stride);
+                for (size_t j=0; j<clength; ++j){
+                    auto c = col_start + (j * col_stride);
+                    res(i,j) = this->operator()(r,c);
+                }
+            }
+            return res; //std::move(res);
+        }
+    }
 
-		// Element access
-		T& operator() (const size_t&, const size_t&);
-		const T& operator()(const size_t&, const size_t&) const;
-		Matrix<T> operator()(const std::array<std::slice, 2>&) const;
-		Matrix<T> operator[](const size_t& i) const { return std::move(Matrix<T>(row(i))); }
-		
-		// utilities
-		static Matrix<T> rand(const size_t& r, const size_t& c);
-		static Matrix<T> unit(const size_t& r, const size_t& c);
-		static Matrix<T> ones(const size_t& r, const size_t& c);
+    template<arithmetic_type T>
+    std::vector<T> Matrix<T>::row(const size_t& i) const
+    {
+        std::vector<T> v(cols);
+        for (size_t j=0; j<cols; ++j){
+            v[j] = this->operator()(i, j);
+        }
+        return v; //std::move(v);
+    }
 
-		iterator begin() { return elems.begin(); }
-		iterator end() { return elems.end(); }
-		const_iterator cbegin() const { return elems.cbegin(); }
-		const_iterator cend() const { return elems.cend(); }
+    template<arithmetic_type T>
+    std::vector<T> Matrix<T>::col(const size_t& i) const
+    {
+        std::vector<T> v(rows);
+        for (size_t j=0; j<rows; ++j) {
+            v[j] = this->operator()(j, i);
+        }
+        return v; //std::move(v);
+    }
 
-		double determinant();
-		Matrix<double> inverse();
-		Matrix<T> transpose();
-		void transpose_();
-		short elim_with_partial_pivot();
+    // utilities
+    template<arithmetic_type T>
+        template<typename F>
+            Matrix<T>& Matrix<T>::apply(F f)
+    {
+        for(auto& x: elems)
+            f(x);
+        return *this;
+    }
 
-		template<typename F>
-			Matrix& apply(F f);
+    template<arithmetic_type T>
+        template<typename M, typename F>
+            typename std::enable_if<
+                    std::is_same<Matrix<T>, M>::value,
+                    Matrix<T>&
+                >::type Matrix<T>::apply(const M& m, F f)
+    {
+        auto i = begin();
+        auto j = m.cbegin();
+        while (j!=m.cend()){
+            f(*i, *j);
+            ++i;
+            ++j;
+        }
+        return *this;
+    }
 
-		template<typename M, typename F>
-			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type apply(const M& m, F f);
+    template<arithmetic_type T>
+    Matrix<T>& Matrix<T>::operator+=(const T& value)
+    {
+        return apply([&](T& a){ a += value; });
+    }
+    template<arithmetic_type T>
+    Matrix<T>& Matrix<T>::operator-=(const T& value)
+    {
+        return apply([&](T& a){ a -= value; });
+    }
+    template<arithmetic_type T>
+    Matrix<T>& Matrix<T>::operator*=(const T& value)
+    {
+        return apply([&](T& a){ a *= value; });
+    }
+    template<arithmetic_type T>
+    Matrix<T>& Matrix<T>::operator/=(const T& value)
+    {
+        if(value==0) throw MatrixZeroDivision("operator/: zero division!!!");
+        return apply([&](T& a){ a /= value; });
+    }
+    template<arithmetic_type T>
+    Matrix<T>& Matrix<T>::operator%=(const T& value)
+    {
+        return apply([&](T& a){ a %= value; });
+    }
 
-		Matrix<T>& operator+=(const T& value);
-		Matrix<T>& operator-=(const T& value);
-		Matrix<T>& operator*=(const T& value);
-		Matrix<T>& operator/=(const T& value);
-		Matrix<T>& operator%=(const T& value);
+    template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
+    Matrix<RT> operator+(Matrix<T>& m, const R& val)
+    {
+        Matrix<RT> res(m);
+        return res.apply([&](RT& a){ a += val; });
+    }
 
-		template<typename M>
-			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator+=(const M&);
-		template<typename M>
-			typename std::enable_if<std::is_same<Matrix<T>, M>::value, Matrix<T>&>::type operator-=(const M&);
-		template<arithmetic_type T1, arithmetic_type T2>
-			friend Matrix<Common_type<T1,T2>> operator*(const Matrix<T1>&, const Matrix<T2>&);
+    template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
+    Matrix<RT> operator-(Matrix<T>& m, const R& val)
+    {
+        Matrix<RT> res(m);
+        return res.apply([&](RT& a){ a -= val; });
+    }
 
-		size_t ndim() const { return ndims; }
-		std::pair<size_t, size_t> shape() const { return std::make_pair(rows, cols); }
-		std::pair<size_t, size_t> strides() const { return stride; }
-		bool is_square() const { return rows==cols; }
-		size_t size() const { return elems.size(); }
-		T* data() { return elems.data(); }
-		const T* data() const { return elems.data(); }
+    template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
+    Matrix<RT> operator*(Matrix<T>& m, const R& val)
+    {
+        Matrix<RT> res(m);
+        return res.apply([&](RT& a){ a *= val; });
+    }
 
-		friend std::ostream& operator<< <> (std::ostream& os, const Matrix<T>& m);
-	
-	protected:
-		Matrix(std::vector<T>&);
-		std::vector<T> row(const size_t& i) const;
-		std::vector<T> col(const size_t& i) const;
-		void swap_row(const size_t& first, const size_t& second);
-		void scale_and_add(const size_t& p_row, const size_t& m_row, const double& multiplier);
-		Matrix<T> minor(const size_t& r, const size_t& c);
+    template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
+    Matrix<RT> operator/(Matrix<T>& m, const R& val)
+    {
+        if(val==0) throw MatrixZeroDivision("operator/: zero division!!!");
+        Matrix<RT> res(m);
+        return res.apply([&](RT& a){ a /= val; });
+    }
 
-	private:
-		size_t ndims, rows, cols;
-		size_t offset=0;
-		std::pair<size_t, size_t> stride;
-		std::vector<T> elems;
-};
+    template<arithmetic_type T, arithmetic_type R, typename RT=Common_type<T,R>>
+    Matrix<RT> operator%(Matrix<T>& m, const R& val)
+    {
+        Matrix<RT> res(m);
+        return res.apply([&](RT& a){ a %= val; });
+    }
 
-#endif // MY_MATRIX
+    template<arithmetic_type T>
+        template<typename M>
+            typename std::enable_if<
+                    std::is_same<Matrix<T>,M>::value,
+                    Matrix<T>&
+                >::type Matrix<T>::operator+=(const M& m)
+    {
+        assert(shape().first==m.shape().first && shape().second==m.shape().second);
+        return apply(m, [](T& a, const Value_type<M>& b){ a += b; });
+    }
+
+    template<arithmetic_type T>
+        template<typename M>
+            typename std::enable_if<
+                    std::is_same<Matrix<T>, M>::value,
+                    Matrix<T>&
+                >::type Matrix<T>::operator-=(const M& m)
+    {
+        assert(shape().first==m.shape().first && shape().second==m.shape().second);
+        return apply(m, [](T& a, const Value_type<M>& b){ a -= b; });
+    }
+
+    template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
+        Matrix<RT> operator+(const Matrix<T>& a, const Matrix<T2>& b)
+    {
+        Matrix<RT> res = a;
+        res += b;
+        return res; //std::move(res);
+    }
+
+    template<arithmetic_type T, arithmetic_type T2, typename RT = Common_type<T,T2>>
+        Matrix<RT> operator-(const Matrix<T>& a, const Matrix<T2>& b)
+    {
+        Matrix<RT> res = a;
+        res -= b;
+        return res; //std::move(res);
+    }
+
+    template<arithmetic_type T, arithmetic_type T2>
+    Matrix<Common_type<T,T2>> operator*(const Matrix<T>& m1, const Matrix<T2>& m2)
+    {
+        assert(m1.cols == m2.rows);
+        size_t n = m1.rows;
+        size_t m = m2.cols;
+        Matrix<Common_type<T,T2>> res(n, m);
+        for(size_t i=0; i<n; ++i) {
+            auto r1 = m1.row(i);
+            for(size_t j=0; j<m; ++j) {
+                auto c2 = m2.col(j);
+                res(i,j) = std::inner_product(
+                                r1.begin(), r1.end(), c2.begin(),
+                                static_cast<Common_type<T, T2>>(0)
+                            );
+            }
+        }
+        return res; //std::move(res);
+    }
+
+    // generates random matrix. The supported types includes
+    // integers and doubles.
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::rand(const size_t& r, const size_t& c)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        Matrix<T> res(r, c);
+
+        if(std::is_integral_v<T>){
+            std::uniform_int_distribution<> dis(1, 100);
+            for(auto& i : res)
+                i = dis(gen);
+        }
+        else if(std::is_floating_point_v<T>){
+            std::uniform_real_distribution<> dis(0, 10);
+            for(auto& i : res)
+                i = dis(gen);
+        }
+
+        return res;
+    }
+
+    // generates a matrix whose elements are all 1
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::ones(const size_t& r, const size_t& c)
+    {
+        Matrix<T> res(r, c);
+        for(auto& i : res)
+            i = 1;
+        return res; // std::move(res);
+    }
+
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::unit(const size_t& r, const size_t& c)
+    {
+        if (r==c){
+            Matrix<T> res(r, c);
+            for(size_t i=0; i<r; ++i){
+                res(i,i) = 1;
+            }
+            return res; //std::move(res);
+        }
+        throw MatrixInvalidDiagonal("row != col; a unit matrix is diagonal");
+    }
+
+    // transpose the matrix inplace.
+    template<arithmetic_type T>
+    void Matrix<T>::transpose_()
+    {
+        std::swap(stride.first, stride.second);
+        std::swap(rows, cols);
+    }
+
+    // returns a transposed matrix, with original matrix
+    // unchanged.
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::transpose()
+    {
+        Matrix<T> res(*this);
+        res.transpose_();
+        return res; //std::move(res);
+    }
+
+    template<arithmetic_type T>
+    void Matrix<T>::swap_row(const size_t& first, const size_t& second)
+    {
+        auto row_1 = row(first);
+        auto row_2 = row(second);
+        auto iter = begin();
+        iter += (first*cols);
+        for(auto j=row_2.begin(); j!=row_2.end(); ++j, ++iter)
+            *iter = *j;
+        iter = begin();
+        iter += (second*cols);
+        for(auto j=row_1.begin(); j!=row_1.end(); ++j, ++iter)
+            *iter = *j;
+    }
+
+    // reduces the lower triangular part of the matrix to zeros
+    // using the guassian elimination with partial pivot method.
+    template<arithmetic_type T>
+    short Matrix<T>::elim_with_partial_pivot()
+    {
+        short sign = 1; // used to keep track of the sign of determinant
+                        // as swapping a row affects the sign of the matrix's determinant.
+        for(size_t j=0; j<rows; ++j) {
+            size_t pivot_row = j;
+            // look for a suitable pivot
+            for(size_t k=j+1; k<rows; ++k) {
+                if (std::abs(this->operator()(k, j)) > std::abs(this->operator()(pivot_row, j)))
+                    pivot_row = k;
+            }
+            // swap the rows if a better pivot is found
+            if(pivot_row != j){
+                swap_row(j, pivot_row);
+                sign ^= -2;
+            }
+            // elimination
+            for(size_t i=j+1; i<rows; ++i) {
+                const double pivot = this->operator()(j,j);
+                if(pivot == 0) throw MatrixEliminationError("can't solve: pivot==0");
+                const double mult = this->operator()(i,j) / pivot;
+                scale_and_add(j, i, mult);
+            }
+        }
+        return sign;
+    }
+
+    template<arithmetic_type T>
+    void Matrix<T>::scale_and_add(
+            const size_t& p_row, const size_t& m_row,
+            const double& multiplier
+        )
+    {
+        auto pivot_row = row(p_row);
+        auto other_row = row(m_row);
+        auto iter = begin();
+        iter += (m_row*cols);
+        for(auto i=other_row.begin(), j=pivot_row.begin(); i!=other_row.end(); ++i, ++j, ++iter) {
+            *iter = static_cast<T>(*i - ((*j) * multiplier));
+        }
+    }
+
+    template<arithmetic_type T>
+    Matrix<T> Matrix<T>::minor(const size_t& r, const size_t& c)
+    {
+        Matrix<T> minor_r_c(rows-1, cols-1);
+        for(size_t i=0, m=0; i<rows; ++i) {
+            if(i==r) continue;
+            for (size_t j=0, n=0; j<cols; ++j) {
+                if(j==c) continue;
+                minor_r_c(m, n) = this->operator()(i,j);
+                ++n;
+            }
+            ++m;
+        }
+        return minor_r_c; //std::move(minor_r_c);
+    }
+
+    template<arithmetic_type T>
+    Matrix<double> Matrix<T>::inverse()
+    {
+        if(!is_square()) throw MatrixInverseError("Inverse of a non-square matrix!!!");
+        auto d = this->determinant();
+        if (d==0) throw MatrixInverseError("Inverse of a singular matrix is undefined!!!");
+        if(rows==2 && cols==2) {
+            Matrix<T> m{
+                {this->operator()(1,1), (-1)*this->operator()(1,0)},
+                {(-1)*this->operator()(0,1), this->operator()(0,0)}
+            };
+            return m/d;
+        }
+        Matrix<double>inv(rows, cols);
+        size_t m=0, n=0;
+        for(auto i=inv.begin(); i!=inv.end(); ++i){
+            *i = ((minor(m,n).determinant()) * (pow(-1.0, static_cast<double>(m+n)))) / d;
+            ++n;
+            if ((n == cols)) {
+                ++m;
+                n = 0;
+            }
+        }
+        inv.transpose_();
+        return inv; //std::move(inv);
+    }
+
+    template<arithmetic_type T>
+    double Matrix<T>::determinant()
+    {
+        if(!is_square()) throw MatrixDeterminantError("Determinant of non-square matrix!!!");
+        double det = 1;
+        Matrix<double> r(*this);
+        auto sign = r.elim_with_partial_pivot();
+        for(size_t i=0; i<rows; ++i)
+            det *= r(i,i);
+        return det*sign;
+    }
+
+    template<arithmetic_type T>
+    std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
+    {
+        [[maybe_unused]] auto r = m.shape().first;
+        auto c = m.shape().second;
+        size_t rm=0, rn=0;
+        T largest = m.elems.at(
+                std::distance(
+                    m.cbegin(),
+                    std::max_element(
+                        m.cbegin(),
+                        m.cend(),
+                        [](const T& a, const T& b){
+                            return (std::to_string(a).length() < \
+                                    std::to_string(b).length());
+                            }
+                        )
+                    )
+                );
+        size_t width = std::to_string(largest).length() + 1;
+        os.precision(4);
+        os << "{\n";
+        for (auto i=m.cbegin(); i!=m.cend(); ++i){
+            if (rn==0) os << "    { ";
+            os << std::right << std::setw(width) << ((std::abs(*i) > 1e-10) ? *i : 0) << " ";
+            ++rn;
+            if ((rn==c)) {
+                os << "}\n";
+                ++rm;
+                rn = 0;
+            }
+        }
+        os << "}\n" << '(' << m.shape().first << 'x' << m.shape().second << ") matrix\n";
+        return os;
+    }
+} // my_matrix
