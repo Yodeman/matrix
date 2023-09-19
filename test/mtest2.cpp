@@ -1,6 +1,8 @@
 #include <iostream>
-#include <matrix/matrix.hpp>
+#include "matrix/libmatrix.hpp"
 #include "matrixConfig.h"
+
+using my_matrix::Matrix;
 
 int main()
 {
@@ -49,13 +51,25 @@ int main()
 	std::cout << "m9 : \n" << m9 << std::endl;
 	std::cout << "m10 : \n" << m10 << std::endl;
 
-	std::cout << "m9[2:8:1, 2:8:1] : \n" << m9({std::slice(2, 8, 1), std::slice(2, 8, 1)}) << std::endl;
-	std::cout << "m10[2:8:2, 2:8:2] : \n" << m10({std::slice(2, 8, 2), std::slice(2, 8, 2)}) << std::endl;
-	std::cout << "m9[2:-1:1, 2:-1:1] : \n" << m9({std::slice(2, -1, 1), std::slice(2, -1, 1)}) << std::endl;
-	std::cout << "m10[2:-1:2, 2:-1:1]" << m10({std::slice(2, -1, 2), std::slice(2, -1, 1)}) << std::endl;
+	std::cout << "m9[2:8:1, 2:8:1] : \n"
+	        << m9({std::slice(2, 8, 1), std::slice(2, 8, 1)})
+	        << std::endl;
+	std::cout << "m10[2:8:2, 2:8:2] : \n"
+	        << m10({std::slice(2, 8, 2), std::slice(2, 8, 2)})
+	        << std::endl;
+	std::cout << "m9[2:-1:1, 2:-1:1] : \n"
+	        << m9({std::slice(2, -1, 1), std::slice(2, -1, 1)})
+	        << std::endl;
+	std::cout << "m10[2:-1:2, 2:-1:1]"
+	        << m10({std::slice(2, -1, 2), std::slice(2, -1, 1)})
+	        << std::endl;
 	try{
-		std::cout << "m9[-1:8:1, 1:8:1] : \n" << m9({std::slice(-1, 8, 1), std::slice(1, 8, 1)}) << std::endl;
-		std::cout << "m9[2:8:1, 2:8:0]" << m9({std::slice(2, 8, 1), std::slice(2, 8, 0)}) << std::endl;
+		std::cout << "m9[-1:8:1, 1:8:1] : \n"
+		        << m9({std::slice(-1, 8, 1), std::slice(1, 8, 1)})
+		        << std::endl;
+		std::cout << "m9[2:8:1, 2:8:0]"
+		        << m9({std::slice(2, 8, 1), std::slice(2, 8, 0)})
+		        << std::endl;
 	}
 	catch(std::exception& e){
 		std::cerr << e.what() << std::endl;
