@@ -6,7 +6,9 @@
 
 ```c++
 #include <iostream>
-#include "matrix/matrix.hpp"
+#include "matrix/libmatrix.hpp"
+
+using my_matrix::Matrix;
 
 int main()
 {
@@ -22,7 +24,9 @@ int main()
 
 ```c++ 
 #include <iostream>
-#include "matrix/matrix.hpp"
+#include "matrix/libmatrix.hpp"
+
+using my_matrix::Matrix;
 
 int main()
 {
@@ -39,7 +43,9 @@ int main()
 ```c++
 
 #include <iostream>
-#include "matrix/matrix.hpp"
+#include "matrix/libmatrix.hpp"
+
+using my_matrix::Matrix;
 
 int main()
 {
@@ -55,7 +61,9 @@ int main()
 
 ```c++
 #include <iostream>
-#include "matrix/matrix.hpp"
+#include "matrix/libmatrix.hpp"
+
+using my_matrix::Matrix;
 
 int main()
 {
